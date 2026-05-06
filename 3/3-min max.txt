@@ -1,0 +1,64 @@
+#include <iostream>
+#include <omp.h>
+
+using namespace std;
+
+int main() {
+    int n;
+
+    cout << "Enter number of elements: ";
+    cin >> n;
+
+    int arr[n];
+
+    cout << "Enter elements:\n";
+    for (int i = 0; i < n; i++) {
+        cin >> arr[i];
+    }
+
+    int sum = 0;
+    int minVal = arr[0];
+    int maxVal = arr[0];
+
+    double start, end;
+
+    start = omp_get_wtime();
+
+    // =========================
+    // PARALLEL REDUCTION BLOCK
+    // =========================
+    #pragma omp parallel for reduction(+:sum) reduction(min:minVal) reduction(max:maxVal)
+    for (int i = 0; i < n; i++) {
+        sum += arr[i];
+
+        if (arr[i] < minVal)
+            minVal = arr[i];
+
+        if (arr[i] > maxVal)
+            maxVal = arr[i];
+    }
+
+    end = omp_get_wtime();
+
+    double average = (double)sum / n;
+
+    cout << "\nRESULTS:\n";
+    cout << "Sum = " << sum << endl;
+    cout << "Min = " << minVal << endl;
+    cout << "Max = " << maxVal << endl;
+    cout << "Average = " << average << endl;
+
+    cout << "\nTime taken (parallel reduction): " << end - start << " sec\n";
+
+    return 0;
+}
+#Enter number of elements: 5
+Enter elements:
+10 20 5 40 15
+RESULTS:
+Sum = 90
+Min = 5
+Max = 40
+Average = 18
+
+Time taken (parallel reduction): 0.000004 sec
