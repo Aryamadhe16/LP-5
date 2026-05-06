@@ -1,0 +1,90 @@
+#include <iostream>
+#include <omp.h>
+using namespace std;
+
+// Sequential Bubble Sort
+void bubbleSeq(int a[], int n)
+{
+    for (int i = 0; i < n - 1; i++)
+    {
+        for (int j = 0; j < n - i - 1; j++)
+        {
+            if (a[j] > a[j + 1])
+                swap(a[j], a[j + 1]);
+        }
+    }
+}
+
+// Parallel Bubble Sort
+void bubblePar(int a[], int n)
+{
+    for (int i = 0; i < n; i++)
+    {
+        int first = i % 2;
+
+        #pragma omp parallel for shared(a, first)
+        for (int j = first; j < n - 1; j += 2)
+        {
+            if (a[j] > a[j + 1])
+                swap(a[j], a[j + 1]);
+        }
+    }
+}
+
+// Print array
+void print(int a[], int n)
+{
+    for (int i = 0; i < n; i++)
+        cout << a[i] << " ";
+    cout << endl;
+}
+
+int main()
+{
+    int n;
+    cout << "Enter number of elements: ";
+    cin >> n;
+
+    int *a = new int[n];
+    int *b = new int[n];
+
+    cout << "Enter elements: ";
+    for (int i = 0; i < n; i++)
+    {
+        cin >> a[i];
+        b[i] = a[i];
+    }
+
+    // Sequential
+    double start = omp_get_wtime();
+    bubbleSeq(a, n);
+    double end = omp_get_wtime();
+
+    cout << "\nSequential Bubble Sort:\n";
+    print(a, n);
+    cout << "Time = " << end - start << " sec\n";
+
+    // Parallel
+    start = omp_get_wtime();
+    bubblePar(b, n);
+    end = omp_get_wtime();
+
+    cout << "\nParallel Bubble Sort:\n";
+    print(b, n);
+    cout << "Time = " << end - start << " sec\n";
+
+    delete[] a;
+    delete[] b;
+
+    return 0;
+}
+Enter number of elements: 5
+Enter elements: 5 2 4 1 3
+#
+Sequential Bubble Sort:
+1 2 3 4 5
+Time = 0.00001 sec
+
+Parallel Bubble Sort:
+1 2 3 4 5
+Time = 0.000004 sec
