@@ -1,0 +1,53 @@
+!pip install git+https://github.com/afnan47/cuda.git
+%load_ext nvcc_plugin
+
+#
+
+%%writefile vector_add.cu
+#include <iostream>
+using namespace std;
+
+__global__ void add(int *A, int *B, int *C, int n) {
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i < n) {
+        C[i] = A[i] + B[i];
+    }
+}
+
+int main() {
+    int n = 5;
+
+    int A[5] = {1,2,3,4,5};
+    int B[5] = {10,20,30,40,50};
+    int C[5];
+
+    int *d_A, *d_B, *d_C;
+
+    cudaMalloc(&d_A, n*sizeof(int));
+    cudaMalloc(&d_B, n*sizeof(int));
+    cudaMalloc(&d_C, n*sizeof(int));
+
+    cudaMemcpy(d_A, A, n*sizeof(int), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_B, B, n*sizeof(int), cudaMemcpyHostToDevice);
+
+    add<<<1,5>>>(d_A, d_B, d_C, n);
+
+    cudaMemcpy(C, d_C, n*sizeof(int), cudaMemcpyDeviceToHost);
+
+    cout << "RESULT:\n";
+    for(int i=0;i<n;i++){
+        cout << A[i] << " + " << B[i] << " = " << C[i] << endl;
+    }
+
+    cudaFree(d_A);
+    cudaFree(d_B);
+    cudaFree(d_C);
+
+    return 0;
+}
+
+#
+!nvcc vector_add.cu -o vector_add
+
+#
+!./vector_add

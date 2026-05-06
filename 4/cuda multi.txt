@@ -1,0 +1,68 @@
+!pip install git+https://github.com/afnan47/cuda.git
+%load_ext nvcc_plugin
+
+#
+%%writefile simple_matmul.cu
+#include <iostream>
+using namespace std;
+
+__global__ void matmul(int *A, int *B, int *C) {
+
+    int row = threadIdx.y;
+    int col = threadIdx.x;
+
+    int sum = 0;
+
+    for (int k = 0; k < 2; k++) {
+        sum += A[row * 2 + k] * B[k * 2 + col];
+    }
+
+    C[row * 2 + col] = sum;
+}
+
+int main() {
+
+    int A[4] = {1, 2,
+                3, 4};
+
+    int B[4] = {5, 6,
+                7, 8};
+
+    int C[4];
+
+    int *d_A, *d_B, *d_C;
+
+    cudaMalloc(&d_A, 4 * sizeof(int));
+    cudaMalloc(&d_B, 4 * sizeof(int));
+    cudaMalloc(&d_C, 4 * sizeof(int));
+
+    cudaMemcpy(d_A, A, 4 * sizeof(int), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_B, B, 4 * sizeof(int), cudaMemcpyHostToDevice);
+
+    dim3 threads(2, 2);
+
+    matmul<<<1, threads>>>(d_A, d_B, d_C);
+
+    cudaMemcpy(C, d_C, 4 * sizeof(int), cudaMemcpyDeviceToHost);
+
+    cout << "Result Matrix:\n";
+
+    for (int i = 0; i < 2; i++) {
+        for (int j = 0; j < 2; j++) {
+            cout << C[i * 2 + j] << " ";
+        }
+        cout << endl;
+    }
+
+    cudaFree(d_A);
+    cudaFree(d_B);
+    cudaFree(d_C);
+
+    return 0;
+}
+
+#
+!nvcc simple_matmul.cu -o simple_matmul
+
+#
+!./simple_matmul
